@@ -12,19 +12,42 @@ namespace WarboxExample;
 /// - It's a Sandbox <see cref="Npc"/>, spawned from a .sent whose prefab works on its own. Restart
 ///   respawns it from that prefab, and the player who spawned it may have no body.
 /// - It picks friends and enemies only through dispositions. Warbox makes teams by calling
-///   SetDisposition (Friendly to teammates, Hostile to other teams) and re-applies them every few
-///   seconds, so no hard-coded "attack tag X" or private faction lists.
+///   SetDisposition (Friendly to teammates, Hostile to other teams, Neutral to players with no
+///   team) and re-applies them every 2 seconds, so no hard-coded "attack tag X" or private faction
+///   lists. Deleting a team calls ClearDisposition.
+/// - It asks again every time, and never keeps fighting a target just because it was one. Mid-fight
+///   Warbox turns enemies Neutral (a unit told to hold its fire, a player switching teams); an NPC
+///   still shooting its remembered target breaks that.
 /// - Alive means <see cref="Npc.Health"/> of 1 or more. No separate HP.
-/// - With sandbox.ai.enabled off it stands still and doesn't attack; with sandbox.ai.notarget on it
-///   leaves players alone but still fights NPCs.
+/// - With sandbox.ai.enabled off it stands still and doesn't attack (Warbox turns it off while units
+///   are placed and while paused); with sandbox.ai.notarget on it leaves players alone but still
+///   fights NPCs.
 /// - AI runs on the host only.
 /// - NPCs it makes itself (a thrown manhack, a launched drone) appear right next to it: Warbox puts
-///   a new NPC in the team of the nearest unit.
+///   a new NPC in the team of the nearest unit within 300 units. Same-kind NPCs on different teams
+///   must be able to hurt each other: decide by disposition, not by tag.
+/// - Its package: type .sent with the tag "npc" ("humanoid" too if it's human-shaped), entity
+///   category Npc, Npc/Humanoid or Npc/Other. The prefab root at its feet with correct Bounds, the
+///   main body model as the first ModelRenderer (Warbox copies it for the placement preview). Keep
+///   the rotation it was spawned with, leave HighlightOutline alone (Warbox adds the team colour),
+///   and hold up with dozens of copies (no static "the one instance" state).
 ///
 /// Being playable is optional. Warbox finds the Warbox* properties below by name, on any one
-/// component, and sets them on the host about 30 times a second. It uses the same properties for
-/// RTS orders and turn-based battles (also with the AI switch off), so a playable NPC takes orders
-/// with no extra work. Only <see cref="WarboxControlled"/> is required; the rest can be left out.
+/// component, and sets them on the host about 30 times a second. WarboxControlled is set from the
+/// playing player's RPC, so Rpc.Caller in its setter is that player. The player's camera sits at
+/// the NPC's eyes and the body stays visible; hide only what blocks the view, and only for them.
+/// Only <see cref="WarboxControlled"/> is required; the rest can be left out.
+///
+/// RTS orders and turn-based battles use the same properties, so a playable NPC takes orders with
+/// no extra work:
+/// - Move: WarboxMove along a navmesh path with WarboxRun held, WarboxAim ahead. A turn's move
+///   ends with the NPC put exactly on its tile (WorldPosition set), so don't mind being moved.
+/// - Attack: WarboxAim at the target's middle, WarboxFire held while it sees the target in range.
+/// - One shot (RTS "shot", a turn's attack): WarboxFire is true for a single frame, so fire on
+///   the press, not after holding. Suppression holds it until the next order.
+/// - Turn-based battles run with sandbox.ai.enabled off the whole time: keep following these
+///   properties then.
+/// NPCs that can't be played are only sent off with Navigation.MoveTo, and fight with their own AI.
 ///
 /// Other optional properties Warbox reads (see Warbox/UnitControl.cs for the exact types):
 /// - WarboxFire2, WarboxReload, WarboxDuck, WarboxGrenade, WarboxUse: more buttons held
@@ -35,10 +58,16 @@ namespace WarboxExample;
 /// - WarboxReach (float): its attack is up close; how near orders must walk it.
 /// - WarboxHelpsFriends (bool): its attack helps friends (heals), so an attack order on a friend
 ///   means "use it on them".
-/// - WarboxWeapons (string[]) + WarboxWeapon (string): its own weapons, and the one picked.
-///   Must be readable on the unspawned prefab too.
+/// - WarboxWeapons (string[]) + WarboxWeapon (string): its own weapons as short names for buttons,
+///   and the one picked. The list must be readable on the unspawned prefab too (Warbox shows the
+///   choice before spawning); WarboxWeapon is set on the host right after spawning and at any time
+///   later, also while it's played.
 /// - WarboxGivenWeapon (BaseSandboxWeapon): an NPC with its own code taking a sandbox or Workshop
-///   gun. Not needed here: Warbox puts given guns straight into a CombatNpc's Weapon slot.
+///   gun. Set on every machine; null means back to its own weapon. Show it with
+///   weapon.CreateWorldModel( renderer ), pose for weapon.HoldType, hide its own weapon, and fire on
+///   the host with weapon.NpcAimTarget + weapon.FirePrimary() (see Shoot below), using weapon.Npc's
+///   ranges and bursts. Warbox owns the weapon object and removes it. Not needed here: Warbox puts
+///   given guns straight into a CombatNpc's Weapon slot.
 /// </summary>
 public sealed class PlayableSoldier : CombatNpc
 {
