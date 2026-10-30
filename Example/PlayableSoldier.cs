@@ -55,7 +55,10 @@ namespace WarboxExample;
 /// - WarboxEyes (Transform): where the camera sits. Without it, the model's "eyes" attachment.
 /// - WarboxSteersCamera (bool) + WarboxLook (Angles): the NPC turns the camera itself (a drone's
 ///   nose camera); the mouse is sent as WarboxLook instead.
-/// - WarboxReach (float): its attack is up close; how near orders must walk it.
+/// - WarboxReach (float): its attack is up close; how near orders must walk it. Warbox then uses it
+///   only on a unit the player clicked (never at a spot or into the air) and offers no suppression.
+/// - WarboxAttackName (string) + WarboxAttackIcon (string, a Material Icons name): what its attack
+///   is called on the action buttons, in the player's language (Game.Language.Current), e.g. a kiss.
 /// - WarboxHelpsFriends (bool): its attack helps friends (heals), so an attack order on a friend
 ///   means "use it on them".
 /// - WarboxWeapons (string[]) + WarboxWeapon (string): its own weapons as short names for buttons,

@@ -94,6 +94,17 @@ public static class UnitControl
 	public static float? ReachOf( GameObject unit ) =>
 		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxReach" ) is float reach && reach > 0f ? reach : null;
 
+	/// <summary>Its attack is up close (melee, a kiss): it's used on a unit, never fired at a spot or from afar.</summary>
+	public static bool IsCloseUp( GameObject unit ) => ReachOf( unit ) is not null;
+
+	/// <summary>What its attack is called on the action buttons (its `WarboxAttackName`), or null for Warbox's own word.</summary>
+	public static string AttackNameOf( GameObject unit ) =>
+		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxAttackName" ) is string name && !string.IsNullOrWhiteSpace( name ) ? name : null;
+
+	/// <summary>Its attack's icon on the action buttons, a Material Icons name (its `WarboxAttackIcon`), or null.</summary>
+	public static string AttackIconOf( GameObject unit ) =>
+		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxAttackIcon" ) is string icon && !string.IsNullOrWhiteSpace( icon ) ? icon : null;
+
 	/// <summary>Its attack helps friends (a kiss that heals): ordering it at a friend means that, not walking over. Its `WarboxHelpsFriends`.</summary>
 	public static bool HelpsFriends( GameObject unit ) =>
 		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxHelpsFriends" ) is true;
