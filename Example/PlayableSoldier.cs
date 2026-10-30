@@ -65,6 +65,10 @@ namespace WarboxExample;
 ///   and the one picked. The list must be readable on the unspawned prefab too (Warbox shows the
 ///   choice before spawning); WarboxWeapon is set on the host right after spawning and at any time
 ///   later, also while it's played.
+/// - WarboxStats (string[]): names of float/int properties on the same component that players may
+///   change (health, speed, grenades...), each with [Range] and [Title]. Warbox sets them on the
+///   host after spawning and when changed, so setters must work right away. Every NPC gets its
+///   plain health without this; a listed one with "Health" in its name replaces it.
 /// - WarboxGivenWeapon (BaseSandboxWeapon): an NPC with its own code taking a sandbox or Workshop
 ///   gun. Set on every machine; null means back to its own weapon. Show it with
 ///   weapon.CreateWorldModel( renderer ), pose for weapon.HoldType, hide its own weapon, and fire on
