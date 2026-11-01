@@ -105,6 +105,77 @@ public static class UnitControl
 	public static string AttackIconOf( GameObject unit ) =>
 		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxAttackIcon" ) is string icon && !string.IsNullOrWhiteSpace( icon ) ? icon : null;
 
+	/// <summary>
+	/// The grenades it has for a grenade order: how many are left (its `WarboxGrenadesLeft`), -1
+	/// when it doesn't say, or null when it throws none (no `WarboxGrenade`, or it carries 0).
+	/// </summary>
+	public static int? GrenadesOf( GameObject unit )
+	{
+		if ( FindReceiver( unit ) is not { } receiver ) return null;
+		if ( TypeLibrary.GetType( receiver.GetType() )?.GetProperty( Grenade ) is not { CanWrite: true } ) return null;
+		if ( Get( receiver, "WarboxGrenades" ) is 0 ) return null;
+
+		return Get( receiver, "WarboxGrenadesLeft" ) is int left ? Math.Max( left, 0 ) : -1;
+	}
+
+	/// <summary>
+	/// Its secondary attack for an order (the AR2's energy ball): name, icon and how many are left
+	/// (-1 when it doesn't say). Null when it has none to order right now (no `WarboxFire2Name`).
+	/// </summary>
+	public static (string Name, string Icon, int Left)? Fire2Of( GameObject unit )
+	{
+		if ( FindReceiver( unit ) is not { } receiver || Get( receiver, "WarboxFire2Name" ) is not string name || string.IsNullOrWhiteSpace( name ) ) return null;
+
+		var icon = Get( receiver, "WarboxFire2Icon" ) as string;
+		var left = Get( receiver, "WarboxFire2Left" ) is int count ? Math.Max( count, 0 ) : -1;
+		return (name, string.IsNullOrWhiteSpace( icon ) ? null : icon, left);
+	}
+
+	/// <summary>A string property of that name on any of the unit's components (not only a playable one's), or null.</summary>
+	public static string ReadString( GameObject unit, string name )
+	{
+		if ( !unit.IsValid() ) return null;
+
+		foreach ( var component in unit.Components.GetAll( FindMode.EverythingInSelfAndDescendants ) )
+		{
+			var property = TypeLibrary.GetType( component.GetType() )?.GetProperty( name );
+			if ( property is null ) continue;
+
+			try
+			{
+				if ( property.GetValue( component ) is string text && !string.IsNullOrWhiteSpace( text ) ) return text;
+			}
+			catch ( Exception )
+			{
+				// A getter that throws is the NPC's problem, not a reason to break the HUD
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>A string[] property of that name on any of the unit's components, or null.</summary>
+	public static string[] ReadStrings( GameObject unit, string name )
+	{
+		if ( !unit.IsValid() ) return null;
+
+		foreach ( var component in unit.Components.GetAll( FindMode.EverythingInSelfAndDescendants ) )
+		{
+			var property = TypeLibrary.GetType( component.GetType() )?.GetProperty( name );
+			if ( property is null ) continue;
+
+			try
+			{
+				if ( property.GetValue( component ) is string[] lines ) return lines;
+			}
+			catch ( Exception )
+			{
+			}
+		}
+
+		return null;
+	}
+
 	/// <summary>Its attack helps friends (a kiss that heals): ordering it at a friend means that, not walking over. Its `WarboxHelpsFriends`.</summary>
 	public static bool HelpsFriends( GameObject unit ) =>
 		FindReceiver( unit ) is { } receiver && Get( receiver, "WarboxHelpsFriends" ) is true;

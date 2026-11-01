@@ -61,6 +61,12 @@ namespace WarboxExample;
 ///   is called on the action buttons, in the player's language (Game.Language.Current), e.g. a kiss.
 /// - WarboxHelpsFriends (bool): its attack helps friends (heals), so an attack order on a friend
 ///   means "use it on them".
+/// - WarboxGrenadesLeft (int): grenades left, shown on the grenade order's button (an NPC with
+///   WarboxGrenade gets that order: Warbox aims WarboxAim at the spot and presses it once).
+/// - WarboxFire2Name (string) + WarboxFire2Icon + WarboxFire2Left (int): an alt-fire order with that
+///   name (null while there's none to use), pressing WarboxFire2 once at the spot.
+/// - WarboxPictures (string[]): "action=path" lines, its own pictures for the order buttons
+///   (shot, suppress, grenade, fire2, melee...). Ship the files in its package.
 /// - WarboxWeapons (string[]) + WarboxWeapon (string): its own weapons as short names for buttons,
 ///   and the one picked. The list must be readable on the unspawned prefab too (Warbox shows the
 ///   choice before spawning); WarboxWeapon is set on the host right after spawning and at any time
